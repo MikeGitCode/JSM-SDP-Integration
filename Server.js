@@ -107,18 +107,130 @@ const getUrgencyOptionId = async (urgencyName) => {
     }
 };
 
+const getImpactOptionId = async (impactName) => {
+    const apiKey = process.env.JIRA_API_KEY;
+    const fieldOptionsUrl = `https://dpcwagov.atlassian.net/rest/api/3/customField/10004/option`; // Replace with your actual Impact custom field ID
+
+    try {
+        const response = await fetch(fieldOptionsUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Failed to fetch field options:', errorData);
+            return null;
+        }
+
+        const data = await response.json();
+        console.log('Impact Field Options Data:', JSON.stringify(data, null, 2)); // Debug output
+
+        if (!data.values) {
+            console.error('Unexpected response format: No values field');
+            return null;
+        }
+
+        // Log all available options
+        data.values.forEach(option => {
+            console.log(`Option ID: ${option.id}, Option Value: ${option.value}`);
+        });
+
+        // Ensure that `impactName` is not undefined or null
+        if (!impactName) {
+            console.error('Impact name is undefined or null');
+            return null;
+        }
+
+        // Find the option with the matching value
+        const option = data.values.find(opt => opt.value.trim() === impactName.trim());
+
+        if (!option) {
+            console.error(`No matching option found for impact name: ${impactName}`);
+        } else {
+            console.log('Selected Impact Option:', JSON.stringify(option, null, 2)); // Debug output
+        }
+
+        return option ? option.id : null;
+
+    } catch (error) {
+        console.error('Error occurred while fetching impact option ID:', error);
+        throw error;
+    }
+};
+
+const mapImpactNameToJira = (impactName) => {
+    switch (impactName) {
+        case 'Low - Impact One Client':
+            return 'Minor / Localized'; // Jira Impact Value
+        case 'Medium - Impact A few Clients':
+            return 'Moderate / Limited'; // Jira Impact Value
+        case 'High - Impact Site, Department or VIP':
+            return 'Extensive / Widespread'; // Jira Impact Value
+        default:
+            return null;
+    }
+};
+
+const mapUrgencyNameToJira = (urgencyName) => {
+    switch (urgencyName) {
+        case 'Low - Minor Inconvenience':
+            return 'Low'; // Jira Impact Value
+        case 'Normal - Major Inconvenience':
+            return 'Medium'; // Jira Impact Value
+        case 'High - Significant Work Impact':
+            return 'High'
+        case 'Urgent - Unable to Work':
+            return 'Critical'; // Jira Impact Value
+        default:
+            return null;
+    }
+};
+
+const mapPriorityNameToJira = (priorityName) => {
+    switch (priorityName) {
+        case 'Low':
+            return 'Lowest'; // Jira Impact Value
+        case 'Normal':
+            return 'Low'; // Jira Impact Value
+        case 'Medium':
+            return 'Medium'
+        case 'High':
+            return 'High'; // Jira Impact Value
+        case 'Critical':
+            return 'Highest'; // Jira Impact Value
+        default:
+            return null;
+    }
+};
 
 app.post('/create-ticket', async (req, res) => {
     const apiKey = process.env.JIRA_API_KEY;
     const jiraUrl = 'https://dpcwagov.atlassian.net/rest/api/3/issue';
-    const requesterEmail = req.body.requester; // Assuming requester field contains email
-    const technicianEmail = req.body.technician; // Assuming technician field contains email
-    const urgencyName = req.body.urgency; // Assuming urgency field contains name
+    const requesterEmail = req.body.requester;
+    const technicianEmail = req.body.technician;
+    const urgencyName = req.body.urgency;
+    const impactName = req.body.impact;
+    const priorityName = req.body.priority
 
     try {
+        // Fetch account IDs
         const requesterAccountId = await getAccountIdFromEmail(requesterEmail);
         const technicianAccountId = await getAccountIdFromEmail(technicianEmail);
-        const urgencyIdNumber = await getUrgencyOptionId(urgencyName);
+
+        // Map urgency name and fetch ID
+        const mappedUrgencyName = mapUrgencyNameToJira(urgencyName);
+        const urgencyIdNumber = mappedUrgencyName ? await getUrgencyOptionId(mappedUrgencyName) : null;
+
+        // Map impact name and fetch ID
+        const mappedImpactName = mapImpactNameToJira(impactName);
+        const impactIdNumber = mappedImpactName ? await getImpactOptionId(mappedImpactName) : null;
+
+        // Map priority name
+        const mappedPriorityName = mapPriorityNameToJira(priorityName);
 
         if (!requesterAccountId) {
             return res.status(404).json({ success: false, message: 'Requester not found' });
@@ -130,6 +242,10 @@ app.post('/create-ticket', async (req, res) => {
 
         if (urgencyIdNumber === null) {
             return res.status(404).json({ success: false, message: 'Urgency option not found' });
+        }
+
+        if (impactIdNumber === null) {
+            return res.status(404).json({ success: false, message: 'Impact option not found' });
         }
 
         const ticketData = {
@@ -161,19 +277,23 @@ app.post('/create-ticket', async (req, res) => {
                 },
 
                 reporter: {
-                    id: requesterAccountId // Use the fetched requester accountId
+                    id: requesterAccountId
                 },
 
                 assignee: {
-                    id: technicianAccountId // Use the fetched technician accountId
+                    id: technicianAccountId
                 },
 
                 priority: {
-                    name: req.body.priority // Use the correct priority ID or value
+                    name: mappedPriorityName
                 },
 
                 customfield_10064: {
-                    id: urgencyIdNumber.toString() // Use the formatted urgencyId
+                    id: urgencyIdNumber.toString()
+                },
+
+                customfield_10004: {
+                    id: impactIdNumber.toString() // Add the Impact field mapping here
                 }
             }
         };
@@ -202,6 +322,7 @@ app.post('/create-ticket', async (req, res) => {
         res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
     }
 });
+
 
 
 const PORT = process.env.PORT || 3000;
