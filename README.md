@@ -3,7 +3,8 @@
 - CREATE_JIRA_TICKET.html
 - Create your own .env file that contains your API key, email and domain. Make sure all files are in the same directory.
 
-.env Format:
+
+**.env Format:**
 
 JIRA_API_KEY=[api key]     <-- without the []'s on both
 
@@ -11,7 +12,9 @@ EMAIL=[email]
 
 DOMAIN=[domain]     <-- The domain will look something like: [organisation].atlassian.net
 
+
 ============================================================================================
+
 
 To submit a ticket via this html form, first run the server.js file via the command prompt (node server.js is the command to do while you are in the same directory as the file).
 Once the server.js file is running, you can then run the .html file and it should open up in the browser. Fill out the fields as shown below.
