@@ -13,40 +13,56 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const getAccountIdFromEmail = async (email) => {
+const getAccountIdFromEmail = async (email) => 
+{
     const apiKey = process.env.JIRA_API_KEY;
     const userSearchUrl = `https://dpcwagov.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
 
-    try {
-        const response = await fetch(userSearchUrl, {
+    try 
+    {
+        const response = await fetch(userSearchUrl, 
+            {
             method: 'GET',
-            headers: {
+            headers: 
+                {
                 'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
+                }
             }
-        });
+        );
 
         const data = await response.json();
 
-        if (response.ok && data.length > 0) {
+        if (response.ok && data.length > 0) 
+        {
             return data[0].accountId; // Return the first match
-        } else {
+        } 
+        
+        else 
+        {
             console.error('User not found or failed to fetch user:', data);
             return null;
         }
-    } catch (error) {
+    } 
+    
+    catch (error) 
+    {
         console.error('Error occurred while fetching accountId:', error);
         throw error;
     }
 };
 
-const getFieldMappings = async () => {
+const getFieldMappings = async () => 
+{
     const xmlData = fs.readFileSync('Jira.xml', 'utf-8');
     const parsedXml = await parseStringPromise(xmlData);
-    const mappings = parsedXml.mappings.mapping.reduce((acc, map) => {
+    
+    const mappings = parsedXml.mappings.mapping.reduce((acc, map) => 
+        {
         acc[map.sourceField[0]] = map.targetField[0];
         return acc;
-    }, {});
+        }, {}
+    );
     return mappings;
 };
 

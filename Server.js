@@ -52,100 +52,101 @@ const getAccountIdFromEmail = async (email) =>
 };
 
 
-const getUrgencyOptionId = async (urgencyName) => 
-    {
+const getUrgencyOptionId = async (urgencyName) => {
     const apiKey = process.env.JIRA_API_KEY;
-    const fieldOptionsUrl = `https://dpcwagov.atlassian.net/rest/api/3/customField/10064/option`; // Replace with your actual custom field ID
+    const fieldOptionsUrl = `https://dpcwagov.atlassian.net/rest/api/3/customField/10064/option`;
 
-    try 
-    {
-        const response = await fetch(fieldOptionsUrl, 
-            {
+    try {
+        const response = await fetch(fieldOptionsUrl, {
             method: 'GET',
-            headers: 
-                {
+            headers: {
                 'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
-                }
             }
-        );
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Failed to fetch field options:', errorData);
+            return null;
+        }
 
         const data = await response.json();
         console.log('Field Options Data:', JSON.stringify(data, null, 2)); // Debug output
 
-        if (response.ok) 
-        {
-            const option = data.values.find(opt => opt.value === urgencyName);
-            console.log('Selected Option:', JSON.stringify(option, null, 2)); // Debug output
-            return option ? option.id : null;
-        } 
-
-        else 
-        {
-            console.error('Failed to fetch field options:', data);
+        if (!data.values) {
+            console.error('Unexpected response format: No values field');
             return null;
         }
 
-    } 
+        // Log all available options
+        data.values.forEach(option => {
+            console.log(`Option ID: ${option.id}, Option Value: ${option.value}`);
+        });
 
-    catch (error) 
-    {
+        // Ensure that `urgencyName` is not undefined or null
+        if (!urgencyName) {
+            console.error('Urgency name is undefined or null');
+            return null;
+        }
+
+        // Find the option with the matching value
+        const option = data.values.find(opt => opt.value.trim() === urgencyName.trim());
+
+        if (!option) {
+            console.error(`No matching option found for urgency name: ${urgencyName}`);
+        } else {
+            console.log('Selected Option:', JSON.stringify(option, null, 2)); // Debug output
+        }
+
+        return option ? option.id : null;
+
+    } catch (error) {
         console.error('Error occurred while fetching urgency option ID:', error);
         throw error;
     }
 };
 
 
-app.post('/create-ticket', async (req, res) => 
-    {
+app.post('/create-ticket', async (req, res) => {
     const apiKey = process.env.JIRA_API_KEY;
     const jiraUrl = 'https://dpcwagov.atlassian.net/rest/api/3/issue';
     const requesterEmail = req.body.requester; // Assuming requester field contains email
     const technicianEmail = req.body.technician; // Assuming technician field contains email
     const urgencyName = req.body.urgency; // Assuming urgency field contains name
 
-    try 
-    {
+    try {
         const requesterAccountId = await getAccountIdFromEmail(requesterEmail);
         const technicianAccountId = await getAccountIdFromEmail(technicianEmail);
-        const urgencyId = await getUrgencyOptionId(urgencyName);
+        const urgencyIdNumber = await getUrgencyOptionId(urgencyName);
 
-        if (!requesterAccountId) 
-        {
+        if (!requesterAccountId) {
             return res.status(404).json({ success: false, message: 'Requester not found' });
         }
 
-        if (!technicianAccountId) 
-        {
+        if (!technicianAccountId) {
             return res.status(404).json({ success: false, message: 'Technician not found' });
         }
 
-        if (!urgencyId) 
-        {
+        if (urgencyIdNumber === null) {
             return res.status(404).json({ success: false, message: 'Urgency option not found' });
         }
 
-        const ticketData = 
-        {
-            fields: 
-            {
-                project: 
-                {
-                    key: 'TEST' // Replace with your actual project key
+        const ticketData = {
+            fields: {
+                project: {
+                    key: 'TEST'
                 },
 
                 summary: req.body.subject,
-                
-                description: 
-                {
+
+                description: {
                     type: "doc",
                     version: 1,
-                    content: 
-                    [
+                    content: [
                         {
                             type: "paragraph",
-                            content: 
-                            [
+                            content: [
                                 {
                                     type: "text",
                                     text: req.body.description
@@ -155,69 +156,53 @@ app.post('/create-ticket', async (req, res) =>
                     ]
                 },
 
-                issuetype: 
-                {
-                    name: '[System] Service request' // Ensure this matches an existing issue type in your Jira instance
+                issuetype: {
+                    name: '[System] Service request'
                 },
 
-                reporter: 
-                {
+                reporter: {
                     id: requesterAccountId // Use the fetched requester accountId
                 },
 
-                assignee: 
-                {
+                assignee: {
                     id: technicianAccountId // Use the fetched technician accountId
                 },
 
-                priority: 
-                {
+                priority: {
                     name: req.body.priority // Use the correct priority ID or value
                 },
 
-                customfield_10064: 
-                {
-                    id: urgencyId
+                customfield_10064: {
+                    id: urgencyIdNumber.toString() // Use the formatted urgencyId
                 }
-                
             }
         };
 
         console.log('Payload:', JSON.stringify(ticketData, null, 2));
 
-        const response = await fetch(jiraUrl, 
-            {
+        const response = await fetch(jiraUrl, {
             method: 'POST',
-            headers: 
-                {
+            headers: {
                 'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
-                },
+            },
             body: JSON.stringify(ticketData)
-            }
-        );
+        });
 
         const data = await response.json();
 
-        if (response.ok) 
-        {
+        if (response.ok) {
             res.json({ success: true, message: 'Ticket created successfully!' });
-        } 
-
-        else 
-        {
+        } else {
             console.error('Failed to create ticket:', data);
             res.status(response.status).json({ success: false, message: `${data.errorMessages || JSON.stringify(data.errors)}` });
         }
-    } 
-    
-    catch (error) 
-        {
+    } catch (error) {
         console.error('Error occurred:', error);
         res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
-        }
     }
-);
+});
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => 
