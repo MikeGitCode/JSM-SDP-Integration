@@ -14,7 +14,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const getAccountIdFromEmail = async (email) => 
     {
     const apiKey = process.env.JIRA_API_KEY;
-    const userSearchUrl = `https://dpcwagov.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
+    const authEmail = process.env.EMAIL;
+    const apiDomain = process.env.DOMAIN
+
+    const userSearchUrl = `https://${apiDomain}.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
 
     try 
     {
@@ -23,7 +26,7 @@ const getAccountIdFromEmail = async (email) =>
             method: 'GET',
             headers: 
                 {
-                'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
+                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
                 }
             }
@@ -54,13 +57,16 @@ const getAccountIdFromEmail = async (email) =>
 
 const getUrgencyOptionId = async (urgencyName) => {
     const apiKey = process.env.JIRA_API_KEY;
-    const fieldOptionsUrl = `https://dpcwagov.atlassian.net/rest/api/3/customField/10064/option`;
+    const authEmail = process.env.EMAIL;
+    const apiDomain = process.env.DOMAIN
+
+    const fieldOptionsUrl = `https://${apiDomain}.atlassian.net/rest/api/3/customField/10064/option`;
 
     try {
         const response = await fetch(fieldOptionsUrl, {
             method: 'GET',
             headers: {
-                'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
+                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -109,13 +115,16 @@ const getUrgencyOptionId = async (urgencyName) => {
 
 const getImpactOptionId = async (impactName) => {
     const apiKey = process.env.JIRA_API_KEY;
-    const fieldOptionsUrl = `https://dpcwagov.atlassian.net/rest/api/3/customField/10004/option`; // Replace with your actual Impact custom field ID
+    const authEmail = process.env.EMAIL;
+    const apiDomain = process.env.DOMAIN
+
+    const fieldOptionsUrl = `https://${apiDomain}.atlassian.net/rest/api/3/customField/10004/option`; // Replace with your actual Impact custom field ID
 
     try {
         const response = await fetch(fieldOptionsUrl, {
             method: 'GET',
             headers: {
-                'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
+                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -165,11 +174,11 @@ const getImpactOptionId = async (impactName) => {
 const mapImpactNameToJira = (impactName) => {
     switch (impactName) {
         case 'Low - Impact One Client':
-            return 'Minor / Localized'; // Jira Impact Value
+            return 'Minor / Localized'; 
         case 'Medium - Impact A few Clients':
-            return 'Moderate / Limited'; // Jira Impact Value
+            return 'Moderate / Limited';
         case 'High - Impact Site, Department or VIP':
-            return 'Extensive / Widespread'; // Jira Impact Value
+            return 'Extensive / Widespread';
         default:
             return null;
     }
@@ -178,13 +187,13 @@ const mapImpactNameToJira = (impactName) => {
 const mapUrgencyNameToJira = (urgencyName) => {
     switch (urgencyName) {
         case 'Low - Minor Inconvenience':
-            return 'Low'; // Jira Impact Value
+            return 'Low';
         case 'Normal - Major Inconvenience':
-            return 'Medium'; // Jira Impact Value
+            return 'Medium';
         case 'High - Significant Work Impact':
             return 'High'
         case 'Urgent - Unable to Work':
-            return 'Critical'; // Jira Impact Value
+            return 'Critical';
         default:
             return null;
     }
@@ -193,15 +202,15 @@ const mapUrgencyNameToJira = (urgencyName) => {
 const mapPriorityNameToJira = (priorityName) => {
     switch (priorityName) {
         case 'Low':
-            return 'Lowest'; // Jira Impact Value
+            return 'Lowest';
         case 'Normal':
-            return 'Low'; // Jira Impact Value
+            return 'Low'; 
         case 'Medium':
             return 'Medium'
         case 'High':
-            return 'High'; // Jira Impact Value
+            return 'High'; 
         case 'Critical':
-            return 'Highest'; // Jira Impact Value
+            return 'Highest'; 
         default:
             return null;
     }
@@ -219,12 +228,18 @@ const mapIssueTypeToJira = (issueTypeName) => {
 
 app.post('/create-ticket', async (req, res) => {
     const apiKey = process.env.JIRA_API_KEY;
-    const jiraUrl = 'https://dpcwagov.atlassian.net/rest/api/3/issue';
+    const authEmail = process.env.EMAIL;
+    const apiDomain = process.env.DOMAIN
+
+    const jiraUrl = `https://${apiDomain}.atlassian.net/rest/api/3/issue`;
+
     const requesterEmail = req.body.requester;
     const technicianEmail = req.body.technician;
+
     const urgencyName = req.body.urgency;
     const impactName = req.body.impact;
     const priorityName = req.body.priority
+
     const issueTypeName = req.body.request_type
 
     try {
@@ -321,7 +336,7 @@ app.post('/create-ticket', async (req, res) => {
         const response = await fetch(jiraUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `Basic ${Buffer.from(`michael.sturt@dpc.wa.gov.au:${apiKey}`).toString('base64')}`,
+                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(ticketData)
