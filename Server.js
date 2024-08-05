@@ -207,6 +207,16 @@ const mapPriorityNameToJira = (priorityName) => {
     }
 };
 
+const mapIssueTypeToJira = (issueTypeName) => {
+    switch (issueTypeName) {
+        case 'Request For Service or Information':
+            return '[System] Service request';
+        case 'Incident':
+            return '[System] Incident'
+    }
+}
+
+
 app.post('/create-ticket', async (req, res) => {
     const apiKey = process.env.JIRA_API_KEY;
     const jiraUrl = 'https://dpcwagov.atlassian.net/rest/api/3/issue';
@@ -215,6 +225,7 @@ app.post('/create-ticket', async (req, res) => {
     const urgencyName = req.body.urgency;
     const impactName = req.body.impact;
     const priorityName = req.body.priority
+    const issueTypeName = req.body.request_type
 
     try {
         // Fetch account IDs
@@ -232,6 +243,9 @@ app.post('/create-ticket', async (req, res) => {
         // Map priority name
         const mappedPriorityName = mapPriorityNameToJira(priorityName);
 
+        // Map Request Type to Issue Type
+        const mappedIssueType = mapIssueTypeToJira(issueTypeName);
+
         if (!requesterAccountId) {
             return res.status(404).json({ success: false, message: 'Requester not found' });
         }
@@ -246,6 +260,10 @@ app.post('/create-ticket', async (req, res) => {
 
         if (impactIdNumber === null) {
             return res.status(404).json({ success: false, message: 'Impact option not found' });
+        }
+        
+        if (mappedIssueType === null) {
+            return res.status(404).json({ success: false, message: 'Issue type not found' });
         }
 
         const ticketData = {
@@ -273,7 +291,7 @@ app.post('/create-ticket', async (req, res) => {
                 },
 
                 issuetype: {
-                    name: '[System] Service request'
+                    name: mappedIssueType
                 },
 
                 reporter: {
