@@ -1,32 +1,44 @@
+**Files Needed:**
+- server.js
+- CREATE_JIRA_TICKET.html
+- Create your own .env file that contains your API key and email. Make sure all files are in the same directory.
+
+**.env Format:**
+JIRA_API_KEY=[api key]             <-- without the []'s on both
+EMAIL=[email]
+
+============================================================================================
+
 To submit a ticket via this html form, first run the server.js file via the command prompt (node server.js is the command to do while you are in the same directory as the file).
 Once the server.js file is running, you can then run the .html file and it should open up in the browser. Fill out the fields as shown below.
 
 When filling out the .html form you need to fill in these fields with one of the options shown (Copy exactly how it is written here):
 Required fields:
-- Requester
+
+**- Requester**
   - Needs to be a valid requester under Jira, can see valid users when you click on the field in a ticket.
     
-- Technician
+**- Technician**
   - Needs to be a valid technician under Jira, can see valid users when you click on the field in a ticket.
     
-- Priority
-	- Low
+**- Priority**
+  - Low
   - Medium
   - High
   - Critical
     
-- Urgency
-	- Low - Minor Inconvenience
+**- Urgency**
+  - Low - Minor Inconvenience
   - Normal - Major Inconvenience
   - High - Significant Work Impact
   - Urgent - Unable to Work
     
-- Impact
+**- Impact**
   - Low - Impact One Client
   - Medium - Impact A few Clients
   - High - Impact Site, Department or VIP
     
-- Request Type
+**- Request Type**
   - Incident
   - Request for Service or Information
  
