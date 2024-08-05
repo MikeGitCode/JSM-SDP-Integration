@@ -6,6 +6,7 @@
 **.env Format:**
 JIRA_API_KEY=[api key]             <-- without the []'s on both
 EMAIL=[email]
+DOMAIN=[domain]                    <-- The domain will look something like: [organisation].atlassian.net
 
 ============================================================================================
 
