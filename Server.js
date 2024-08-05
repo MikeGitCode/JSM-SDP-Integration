@@ -11,62 +11,43 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const getAccountIdFromEmail = async (email) => 
-    {
-    const apiKey = process.env.JIRA_API_KEY;
-    const authEmail = process.env.EMAIL;
-    const apiDomain = process.env.DOMAIN
+const { JIRA_API_KEY, EMAIL, DOMAIN, PORT } = process.env;
 
-    const userSearchUrl = `https://${apiDomain}.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
+const getAccountIdFromEmail = async (email) => {
+    const userSearchUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
 
-    try 
-    {
-        const response = await fetch(userSearchUrl, 
-            {
+    try {
+        const response = await fetch(userSearchUrl, {
             method: 'GET',
-            headers: 
-                {
-                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
+            headers: {
+                'Authorization': `Basic ${Buffer.from(`${EMAIL}:${JIRA_API_KEY}`).toString('base64')}`,
                 'Content-Type': 'application/json'
-                }
             }
-        );
+        });
 
         const data = await response.json();
 
-        if (response.ok && data.length > 0) 
-        {
-            return data[0].accountId; // Return the first match
-        } 
-
-        else 
-        {
+        if (response.ok && data.length > 0) {
+            return data[0].accountId;
+        } else {
             console.error('User not found or failed to fetch user:', data);
             return null;
         }
-
     } 
-
-    catch (error) 
-    {
+    catch (error) {
         console.error('Error occurred while fetching accountId:', error);
         throw error;
     }
 };
 
-
-const getUrgencyOptionId = async (urgencyName) => {
-    const apiKey = process.env.JIRA_API_KEY;
-    const authEmail = process.env.EMAIL;
-    const apiDomain = process.env.DOMAIN
-
-    const fieldOptionsUrl = `https://${apiDomain}.atlassian.net/rest/api/3/customField/10064/option`;
+const getFieldOptionId = async (fieldId, optionName) => {
+    const fieldOptionsUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/customField/${fieldId}/option`;
 
     try {
         const response = await fetch(fieldOptionsUrl, {
             method: 'GET',
             headers: {
-                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
+                'Authorization': `Basic ${Buffer.from(`${EMAIL}:${JIRA_API_KEY}`).toString('base64')}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -78,7 +59,6 @@ const getUrgencyOptionId = async (urgencyName) => {
         }
 
         const data = await response.json();
-        console.log('Field Options Data:', JSON.stringify(data, null, 2)); // Debug output
 
         if (!data.values) {
             console.error('Unexpected response format: No values field');
@@ -90,244 +70,111 @@ const getUrgencyOptionId = async (urgencyName) => {
             console.log(`Option ID: ${option.id}, Option Value: ${option.value}`);
         });
 
-        // Ensure that `urgencyName` is not undefined or null
-        if (!urgencyName) {
-            console.error('Urgency name is undefined or null');
+        if (!optionName) {
+            console.error('Option name is undefined or null');
             return null;
         }
 
-        // Find the option with the matching value
-        const option = data.values.find(opt => opt.value.trim() === urgencyName.trim());
+        const option = data.values.find(opt => opt.value.trim() === optionName.trim());
 
         if (!option) {
-            console.error(`No matching option found for urgency name: ${urgencyName}`);
+            console.error(`No matching option found for option name: ${optionName}`);
         } else {
-            console.log('Selected Option:', JSON.stringify(option, null, 2)); // Debug output
+            console.log('Selected Option:', JSON.stringify(option, null, 2));
         }
 
         return option ? option.id : null;
-
-    } catch (error) {
-        console.error('Error occurred while fetching urgency option ID:', error);
-        throw error;
-    }
-};
-
-const getImpactOptionId = async (impactName) => {
-    const apiKey = process.env.JIRA_API_KEY;
-    const authEmail = process.env.EMAIL;
-    const apiDomain = process.env.DOMAIN
-
-    const fieldOptionsUrl = `https://${apiDomain}.atlassian.net/rest/api/3/customField/10004/option`; // Replace with your actual Impact custom field ID
-
-    try {
-        const response = await fetch(fieldOptionsUrl, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Failed to fetch field options:', errorData);
-            return null;
-        }
-
-        const data = await response.json();
-        console.log('Impact Field Options Data:', JSON.stringify(data, null, 2)); // Debug output
-
-        if (!data.values) {
-            console.error('Unexpected response format: No values field');
-            return null;
-        }
-
-        // Log all available options
-        data.values.forEach(option => {
-            console.log(`Option ID: ${option.id}, Option Value: ${option.value}`);
-        });
-
-        // Ensure that `impactName` is not undefined or null
-        if (!impactName) {
-            console.error('Impact name is undefined or null');
-            return null;
-        }
-
-        // Find the option with the matching value
-        const option = data.values.find(opt => opt.value.trim() === impactName.trim());
-
-        if (!option) {
-            console.error(`No matching option found for impact name: ${impactName}`);
-        } else {
-            console.log('Selected Impact Option:', JSON.stringify(option, null, 2)); // Debug output
-        }
-
-        return option ? option.id : null;
-
-    } catch (error) {
-        console.error('Error occurred while fetching impact option ID:', error);
+    } 
+    catch (error) {
+        console.error('Error occurred while fetching option ID:', error);
         throw error;
     }
 };
 
 const mapImpactNameToJira = (impactName) => {
-    switch (impactName) {
-        case 'Low - Impact One Client':
-            return 'Minor / Localized'; 
-        case 'Medium - Impact A few Clients':
-            return 'Moderate / Limited';
-        case 'High - Impact Site, Department or VIP':
-            return 'Extensive / Widespread';
-        default:
-            return null;
-    }
+    const mappings = {
+        'Low - Impact One Client': 'Minor / Localized',
+        'Medium - Impact A few Clients': 'Moderate / Limited',
+        'High - Impact Site, Department or VIP': 'Extensive / Widespread'
+    };
+    return mappings[impactName] || null;
 };
 
 const mapUrgencyNameToJira = (urgencyName) => {
-    switch (urgencyName) {
-        case 'Low - Minor Inconvenience':
-            return 'Low';
-        case 'Normal - Major Inconvenience':
-            return 'Medium';
-        case 'High - Significant Work Impact':
-            return 'High'
-        case 'Urgent - Unable to Work':
-            return 'Critical';
-        default:
-            return null;
-    }
+    const mappings = {
+        'Low - Minor Inconvenience': 'Low',
+        'Normal - Major Inconvenience': 'Medium',
+        'High - Significant Work Impact': 'High',
+        'Urgent - Unable to Work': 'Critical'
+    };
+    return mappings[urgencyName] || null;
 };
 
 const mapPriorityNameToJira = (priorityName) => {
-    switch (priorityName) {
-        case 'Low':
-            return 'Lowest';
-        case 'Normal':
-            return 'Low'; 
-        case 'Medium':
-            return 'Medium'
-        case 'High':
-            return 'High'; 
-        case 'Critical':
-            return 'Highest'; 
-        default:
-            return null;
-    }
+    const mappings = {
+        'Low': 'Lowest',
+        'Normal': 'Low',
+        'Medium': 'Medium',
+        'High': 'High',
+        'Critical': 'Highest'
+    };
+    return mappings[priorityName] || null;
 };
 
 const mapIssueTypeToJira = (issueTypeName) => {
-    switch (issueTypeName) {
-        case 'Request For Service or Information':
-            return '[System] Service request';
-        case 'Incident':
-            return '[System] Incident'
-    }
-}
-
+    const mappings = {
+        'Request For Service or Information': '[System] Service request',
+        'Incident': '[System] Incident'
+    };
+    return mappings[issueTypeName] || null;
+};
 
 app.post('/create-ticket', async (req, res) => {
-    const apiKey = process.env.JIRA_API_KEY;
-    const authEmail = process.env.EMAIL;
-    const apiDomain = process.env.DOMAIN
+    const jiraUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/issue`;
 
-    const jiraUrl = `https://${apiDomain}.atlassian.net/rest/api/3/issue`;
-
-    const requesterEmail = req.body.requester;
-    const technicianEmail = req.body.technician;
-
-    const urgencyName = req.body.urgency;
-    const impactName = req.body.impact;
-    const priorityName = req.body.priority
-
-    const issueTypeName = req.body.request_type
+    const { requester, technician, urgency, impact, priority, request_type, subject, description } = req.body;
 
     try {
-        // Fetch account IDs
-        const requesterAccountId = await getAccountIdFromEmail(requesterEmail);
-        const technicianAccountId = await getAccountIdFromEmail(technicianEmail);
+        const requesterAccountId = await getAccountIdFromEmail(requester);
+        const technicianAccountId = await getAccountIdFromEmail(technician);
 
-        // Map urgency name and fetch ID
-        const mappedUrgencyName = mapUrgencyNameToJira(urgencyName);
-        const urgencyIdNumber = mappedUrgencyName ? await getUrgencyOptionId(mappedUrgencyName) : null;
+        const mappedUrgencyName = mapUrgencyNameToJira(urgency);
+        const urgencyIdNumber = mappedUrgencyName ? await getFieldOptionId('10064', mappedUrgencyName) : null; // If you add more customfields, you just need to copy what has been done with urgency or impact.
 
-        // Map impact name and fetch ID
-        const mappedImpactName = mapImpactNameToJira(impactName);
-        const impactIdNumber = mappedImpactName ? await getImpactOptionId(mappedImpactName) : null;
+        const mappedImpactName = mapImpactNameToJira(impact);
+        const impactIdNumber = mappedImpactName ? await getFieldOptionId('10004', mappedImpactName) : null;
 
-        // Map priority name
-        const mappedPriorityName = mapPriorityNameToJira(priorityName);
+        const mappedPriorityName = mapPriorityNameToJira(priority);
+        const mappedIssueType = mapIssueTypeToJira(request_type);
 
-        // Map Request Type to Issue Type
-        const mappedIssueType = mapIssueTypeToJira(issueTypeName);
 
-        if (!requesterAccountId) {
-            return res.status(404).json({ success: false, message: 'Requester not found' });
-        }
+        if (!requesterAccountId) return res.status(404).json({ success: false, message: 'Requester not found' });
+        if (!technicianAccountId) return res.status(404).json({ success: false, message: 'Technician not found' });
 
-        if (!technicianAccountId) {
-            return res.status(404).json({ success: false, message: 'Technician not found' });
-        }
-
-        if (urgencyIdNumber === null) {
-            return res.status(404).json({ success: false, message: 'Urgency option not found' });
-        }
-
-        if (impactIdNumber === null) {
-            return res.status(404).json({ success: false, message: 'Impact option not found' });
-        }
-        
-        if (mappedIssueType === null) {
-            return res.status(404).json({ success: false, message: 'Issue type not found' });
-        }
+        if (urgencyIdNumber === null) return res.status(404).json({ success: false, message: 'Urgency option not found' });
+        if (impactIdNumber === null) return res.status(404).json({ success: false, message: 'Impact option not found' });
+        if (mappedIssueType === null) return res.status(404).json({ success: false, message: 'Issue type not found' });
 
         const ticketData = {
             fields: {
-                project: {
-                    key: 'TEST'
-                },
-
-                summary: req.body.subject,
-
+                project: { key: 'TEST' },
+                summary: subject,
                 description: {
                     type: "doc",
                     version: 1,
                     content: [
                         {
                             type: "paragraph",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: req.body.description
-                                }
-                            ]
+                            content: [{ type: "text", text: description }]
                         }
                     ]
                 },
-
-                issuetype: {
-                    name: mappedIssueType
-                },
-
-                reporter: {
-                    id: requesterAccountId
-                },
-
-                assignee: {
-                    id: technicianAccountId
-                },
-
-                priority: {
-                    name: mappedPriorityName
-                },
-
-                customfield_10064: {
-                    id: urgencyIdNumber.toString()
-                },
-
-                customfield_10004: {
-                    id: impactIdNumber.toString() // Add the Impact field mapping here
-                }
+                issuetype: { name: mappedIssueType },
+                reporter: { id: requesterAccountId },
+                assignee: { id: technicianAccountId },
+                priority: { name: mappedPriorityName },
+                customfield_10064: { id: urgencyIdNumber.toString() },
+                customfield_10004: { id: impactIdNumber.toString() }
             }
         };
 
@@ -336,7 +183,7 @@ app.post('/create-ticket', async (req, res) => {
         const response = await fetch(jiraUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `Basic ${Buffer.from(`${authEmail}:${apiKey}`).toString('base64')}`,
+                'Authorization': `Basic ${Buffer.from(`${EMAIL}:${JIRA_API_KEY}`).toString('base64')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(ticketData)
@@ -350,6 +197,7 @@ app.post('/create-ticket', async (req, res) => {
             console.error('Failed to create ticket:', data);
             res.status(response.status).json({ success: false, message: `${data.errorMessages || JSON.stringify(data.errors)}` });
         }
+    
     } catch (error) {
         console.error('Error occurred:', error);
         res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
@@ -357,10 +205,6 @@ app.post('/create-ticket', async (req, res) => {
 });
 
 
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => 
-    {
-    console.log(`Server is running on port ${PORT}`);
-    }
-);
+app.listen(PORT || 3000, () => {
+    console.log(`Server is running on port ${PORT || 3000}`);
+});
