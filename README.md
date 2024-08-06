@@ -16,7 +16,7 @@ PORT=[port]
 
 PROJ_KEY=[project key]
 
-============================================================================================
+===========================================================================================
 
 
 To submit a ticket via this html form, first run the server.js file via the command prompt (node server.js is the command to do while you are in the same directory as the file).
