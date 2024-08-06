@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import cors from 'cors';
 
+
 dotenv.config();
 
 const app = express();
@@ -11,7 +12,8 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const { JIRA_API_KEY, EMAIL, DOMAIN, PORT } = process.env;
+const { JIRA_API_KEY, EMAIL, DOMAIN, PORT, PROJ_KEY } = process.env; // If you change or add anything in the .env file, add/change it here
+
 
 const getAccountIdFromEmail = async (email) => {
     const userSearchUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
@@ -39,6 +41,7 @@ const getAccountIdFromEmail = async (email) => {
         throw error;
     }
 };
+
 
 const getFieldOptionId = async (fieldId, optionName) => {
     const fieldOptionsUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/customField/${fieldId}/option`;
@@ -91,7 +94,8 @@ const getFieldOptionId = async (fieldId, optionName) => {
     }
 };
 
-const mapImpactNameToJira = (impactName) => {
+
+const mapImpactNameToJira = (impactName) => {  // If you need any more custom fields mapped, create new functions for each like these ones.
     const mappings = {
         'Low - Impact One Client': 'Minor / Localized',
         'Medium - Impact A few Clients': 'Moderate / Limited',
@@ -99,6 +103,7 @@ const mapImpactNameToJira = (impactName) => {
     };
     return mappings[impactName] || null;
 };
+
 
 const mapUrgencyNameToJira = (urgencyName) => {
     const mappings = {
@@ -109,6 +114,7 @@ const mapUrgencyNameToJira = (urgencyName) => {
     };
     return mappings[urgencyName] || null;
 };
+
 
 const mapPriorityNameToJira = (priorityName) => {
     const mappings = {
@@ -121,6 +127,7 @@ const mapPriorityNameToJira = (priorityName) => {
     return mappings[priorityName] || null;
 };
 
+
 const mapIssueTypeToJira = (issueTypeName) => {
     const mappings = {
         'Request For Service or Information': '[System] Service request',
@@ -128,6 +135,7 @@ const mapIssueTypeToJira = (issueTypeName) => {
     };
     return mappings[issueTypeName] || null;
 };
+
 
 app.post('/create-ticket', async (req, res) => {
     const jiraUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/issue`;
@@ -140,7 +148,7 @@ app.post('/create-ticket', async (req, res) => {
 
         const mappedUrgencyName = mapUrgencyNameToJira(urgency);
         const urgencyIdNumber = mappedUrgencyName ? await getFieldOptionId('10064', mappedUrgencyName) : null; // If you add more customfields, you just need to copy what has been done with urgency or impact.
-
+                                                                                                               // i.e. call the function that maps what is inputted to what is in Jira, and then get that field ID.
         const mappedImpactName = mapImpactNameToJira(impact);
         const impactIdNumber = mappedImpactName ? await getFieldOptionId('10004', mappedImpactName) : null;
 
@@ -157,7 +165,7 @@ app.post('/create-ticket', async (req, res) => {
 
         const ticketData = {
             fields: {
-                project: { key: 'TEST' },
+                project: { key: `${PROJ_KEY}` },
                 summary: subject,
                 description: {
                     type: "doc",
@@ -174,7 +182,7 @@ app.post('/create-ticket', async (req, res) => {
                 assignee: { id: technicianAccountId },
                 priority: { name: mappedPriorityName },
                 customfield_10064: { id: urgencyIdNumber.toString() },
-                customfield_10004: { id: impactIdNumber.toString() }
+                customfield_10004: { id: impactIdNumber.toString() }  // When you add more custom fields, copy what is done with these
             }
         };
 
@@ -205,6 +213,6 @@ app.post('/create-ticket', async (req, res) => {
 });
 
 
-app.listen(PORT || 3000, () => {
+app.listen(PORT || 3000, () => {  // If no port is specified in the .env file, this will default to port 3000.
     console.log(`Server is running on port ${PORT || 3000}`);
 });
