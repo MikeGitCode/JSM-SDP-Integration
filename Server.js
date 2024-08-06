@@ -166,18 +166,18 @@ app.post('/create-ticket', async (req, res) => {
         const ticketData = {
             fields: {
                 project: { key: `${PROJ_KEY}` },
-                summary: subject,
+                summary: subject || 'No Subject Provided',
                 description: {
                     type: "doc",
                     version: 1,
                     content: [
                         {
                             type: "paragraph",
-                            content: [{ type: "text", text: description }]
+                            content: [{ type: "text", text: description || 'No Description Provided' }]
                         }
                     ]
                 },
-                issuetype: { name: mappedIssueType },
+                issuetype: { name: mappedIssueType || '[System] Service Request'},
                 reporter: { id: requesterAccountId },
                 assignee: { id: technicianAccountId },
                 priority: { name: mappedPriorityName },
