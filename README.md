@@ -10,7 +10,11 @@ JIRA_API_KEY=[api key]     <-- without the []'s on both
 
 EMAIL=[email]
 
-DOMAIN=[domain]     <-- The domain will look something like: [organisation].atlassian.net
+DOMAIN=[domain]     <-- The domain will look something like: [organisation].atlassian.net where you only need the [organisation] part in the DOMAIN variable, you do not need atlassian.net.
+
+PORT=[port]
+
+PROJ_KEY=[project key]
 
 ============================================================================================
 
