@@ -3,17 +3,14 @@
 - CREATE_JIRA_TICKET.html
 - Create your own .env file that contains your API key, email and domain. Make sure all files are in the same directory.
 
+
 **.env Format:**
 
 JIRA_API_KEY=[api key]     <-- without the []'s on both
 
 EMAIL=[email]
 
-DOMAIN=[domain]     <-- The domain will look something like: [organisation].atlassian.net but only put the [organisation] part in the DOMAIN variable.
-
-PORT=[port]
-
-PROJ_KEY=[key for your jira project]
+DOMAIN=[domain]     <-- The domain will look something like: [organisation].atlassian.net
 
 ============================================================================================
 
