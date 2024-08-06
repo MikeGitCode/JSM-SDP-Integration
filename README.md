@@ -82,7 +82,7 @@ The following fields are what are automatically mapped within the server.js file
     
 ### **- Request Type**
   - Incident
-  - Request for Service or Information
+  - Request For Service or Information
  
  
 
