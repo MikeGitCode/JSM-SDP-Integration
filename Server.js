@@ -144,7 +144,9 @@ app.post('/create-ticket', async (req, res) => {
 
     try {
         const requesterAccountId = await getAccountIdFromEmail(requester);
-        const technicianAccountId = await getAccountIdFromEmail(technician);
+        const technicianValue = (technician && technician.trim() !== 'Not Specified') ? technician : 'Unassigned';
+        const technicianAccountId = technicianValue === 'Unassigned' ? null : await getAccountIdFromEmail(technicianValue);
+        
 
         const mappedUrgencyName = mapUrgencyNameToJira(urgency);
         const urgencyIdNumber = mappedUrgencyName ? await getFieldOptionId('10064', mappedUrgencyName) : null; // If you add more customfields, you just need to copy what has been done with urgency or impact.
@@ -157,7 +159,6 @@ app.post('/create-ticket', async (req, res) => {
 
 
         if (!requesterAccountId) return res.status(404).json({ success: false, message: 'Requester not found' });
-        if (!technicianAccountId) return res.status(404).json({ success: false, message: 'Technician not found' });
 
         if (urgencyIdNumber === null) return res.status(404).json({ success: false, message: 'Urgency option not found' });
         if (impactIdNumber === null) return res.status(404).json({ success: false, message: 'Impact option not found' });
@@ -179,7 +180,7 @@ app.post('/create-ticket', async (req, res) => {
                 },
                 issuetype: { name: mappedIssueType || '[System] Service Request'},
                 reporter: { id: requesterAccountId },
-                assignee: { id: technicianAccountId },
+                ...(technicianAccountId ? { assignee: { id: technicianAccountId } } : { assignee: { name: 'Unassigned' } }),
                 priority: { name: mappedPriorityName },
                 customfield_10064: { id: urgencyIdNumber.toString() },
                 customfield_10004: { id: impactIdNumber.toString() }  // When you add more custom fields, copy what is done with these

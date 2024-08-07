@@ -4,14 +4,14 @@ const triggerUrl = 'http://localhost:3000/create-ticket';
 
 // Simulate form data (replace with actual data if available)
 const ticketData = {
-    requester: 'michael.sturt@dpc.wa.gov.au',
-    technician: 'michael.sturt@dpc.wa.gov.au',
-    urgency: 'Low - Minor Inconvenience',
+    requester: 'Michael Sturt',
+    technician: 'Michael Sturt',
+    urgency: 'Normal - Major Inconvenience',
     impact: 'Low - Impact One Client',
-    priority: 'Low',
-    request_type: 'Incident',
-    subject: '<#subject>',
-    description: '<#description>'
+    priority: 'High',
+    request_type: 'Request For Service or Information',
+    subject: 'External Ticket',
+    description: 'This ticket was made automatically via an external script.'
 };
 
 const sendRequest = async (data) => {
