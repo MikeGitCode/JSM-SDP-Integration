@@ -4,14 +4,14 @@ const triggerUrl = 'http://localhost:3000/create-ticket';
 
 // Simulate form data (replace with actual data if available)
 const ticketData = {
-    requester: 'Michael Sturt',
-    technician: 'Michael Sturt',
-    urgency: 'Normal - Major Inconvenience',
-    impact: 'Low - Impact One Client',
-    priority: 'High',
-    request_type: 'Request For Service or Information',
-    subject: 'External Ticket',
-    description: 'This ticket was made automatically via an external script.'
+    requester: '<#requester>',
+    technician: '<#technician>',
+    urgency: '<#urgency>',
+    impact: '<#impact>',
+    priority: '<#priority>',
+    request_type: '<#request_type>',
+    subject: '<#subject>',
+    description: '<#description>'
 };
 
 const sendRequest = async (data) => {
@@ -27,7 +27,7 @@ const sendRequest = async (data) => {
         const result = await response.json();
 
         if (response.ok) {
-            console.log('Ticket created successfully!');
+            console.log('\x1b[32m', 'Ticket created successfully!', '\x1b[0m');
         } else {
             console.error('Failed to create ticket:', result);
         }
