@@ -140,7 +140,7 @@ const mapIssueTypeToJira = (issueTypeName) => {
 app.post('/create-ticket', async (req, res) => {
     const jiraUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/issue`;
 
-    const { requester, technician, urgency, impact, priority, request_type, subject, description, department, created_by } = req.body;
+    const { requester, technician, urgency, impact, priority, request_type, subject, description, department, created_by, category, subcategory } = req.body;
 
     try {
         const requesterAccountId = await getAccountIdFromEmail(requester);
@@ -185,7 +185,9 @@ app.post('/create-ticket', async (req, res) => {
                 customfield_10064: { id: urgencyIdNumber.toString() },
                 customfield_10004: { id: impactIdNumber.toString() },  // When you add more custom fields, copy what is done with these
                 customfield_10111: department,
-                customfield_10112: created_by
+                customfield_10112: created_by,
+                customfield_10113: category,
+                customfield_10114: subcategory
             }
         };
 
