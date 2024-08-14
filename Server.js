@@ -95,7 +95,7 @@ const getFieldOptionId = async (fieldId, optionName) => {
 };
 
 
-const mapImpactNameToJira = (impactName) => {  // If you need any more custom fields mapped, create new functions for each like these ones.
+const mapImpactNameToJira = (impactName) => {  // If you need any more custom fields mapped, create new functions for each. Copy these ones.
     const mappings = {
         'Low - Impact One Client': 'Minor / Localized',
         'Medium - Impact A few Clients': 'Moderate / Limited',
@@ -140,7 +140,7 @@ const mapIssueTypeToJira = (issueTypeName) => {
 app.post('/create-ticket', async (req, res) => {
     const jiraUrl = `https://${DOMAIN}.atlassian.net/rest/api/3/issue`;
 
-    const { requester, technician, urgency, impact, priority, request_type, subject, description, department, created_by, category, subcategory, id } = req.body;
+    const { requester, technician, urgency, impact, priority, request_type, subject, description, department, created_by, category, subcategory, id } = req.body;  //  If using a field from the SDP form, add the name here
 
     try {
         const requesterAccountId = await getAccountIdFromEmail(requester);
@@ -167,31 +167,31 @@ app.post('/create-ticket', async (req, res) => {
         const ticketData = {
             fields: {
                 project: { key: `${PROJ_KEY}` },
-                summary: subject || 'No Subject Provided',
+                summary: subject || 'No Subject Provided',  // Change this text to whatever you want it to say if no subject is provided.
                 description: {
                     type: "doc",
                     version: 1,
                     content: [
                         {
                             type: "paragraph",
-                            content: [{ type: "text", text: description || 'No Description Provided' }]
+                            content: [{ type: "text", text: description || 'No Description Provided' }]  // Change this text to whatever you want it to say if no description is provided.
                         }
                     ]
                 },
-                issuetype: { name: mappedIssueType || '[System] Service Request'},
+                issuetype: { name: mappedIssueType || '[System] Service Request'},  //  By default I have set the request to be classed as a Service Request if no Request Type is stated.
                 reporter: { id: requesterAccountId },
                 ...(technicianAccountId ? { assignee: { id: technicianAccountId } } : { assignee: { name: 'Unassigned' } }),
                 priority: { name: mappedPriorityName },
                 customfield_10064: { id: urgencyIdNumber.toString() },
                 customfield_10004: { id: impactIdNumber.toString() },  // When you add more custom fields, copy what is done with these
-                customfield_10111: department,
+                customfield_10111: department,  // If the new custom field just takes the values from the SDP field directly with no need for mapping, then you can copy what is done with these
                 customfield_10112: created_by,
                 customfield_10113: category,
                 customfield_10114: subcategory,
                 customfield_10116: id
             }
         };
-
+        
         console.log('Payload:', JSON.stringify(ticketData, null, 2));
 
         const response = await fetch(jiraUrl, {
