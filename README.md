@@ -20,10 +20,11 @@ Simple Outline of Process:
 
 The server.js file is what does most of the heavy lifting and uses the .env file to store organisation-specific or secret variables that are best not shared.
 
-The only things you need to change in the server.js file are any of the field mapping that does not match your field values, and if you wish to use other custom fields you can copy what is done with the current custom fields in the file.
+The only things you need to change in the server.js file are any of the field mapping that do not match your field values, and if you wish to use other custom fields you can copy what is done with the current custom fields in the file.
 
 All custom fields will be able to use the getFieldOptionId function, so you can run any custom field you have through that. Then add your own mapping function by copying one of the current ones and changing the values to suit yours.
-The most important part is creating the .env file and storing the required variables as shown below. The file should just be called ".env" and should be stored in the same place as the .js and .html files.
+
+The most important part is creating the .env file and storing the required variables as shown below. The file should just be called ".env" and should be stored in the same place as the other files.
 
 ## **.env Format:**
 _The name for the .env file should just be .env. If this is not the case then the other files will not have the necessary information_
@@ -46,8 +47,11 @@ Previously I was using the CREATE-JIRA-TICKET.html file to fill out a form which
 Currently the file has hardcoded values for testing purposes, but in the live version these will be replaced with placeholder variables that ServiceDesk Plus can fill out when a ticket is created.
 
 ## Running the code
-To submit a ticket via this html form, first run the server.js file via the command prompt (node server.js is the command to do while you are in the same directory as the file).
-Once the server.js file is running, you can then run the .html file and it should open up in the browser. Fill out the fields as shown below.
+To submit a ticket, first run the server.js file via the command prompt (node server.js is the command to do while you are in the same directory as the file).
+
+Once the server.js file is running, you can then run the triggerScript.js file. Depending on whether your inputs are valid, it will either say the ticket was successfully created or failed.
+
+Regardless of whether it was successful or not, the console you are running the server.js file in will display the payload and the data its getting the information from for the payload.
 
 ## Mapping fields:
 
@@ -83,7 +87,3 @@ The following fields are what are automatically mapped within the server.js file
 ### **- Request Type**
   - Incident
   - Request For Service or Information
- 
- 
-
-
