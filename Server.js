@@ -31,11 +31,14 @@ const getAccountIdFromEmail = async (email) => {
 
         if (response.ok && data.length > 0) {
             return data[0].accountId;
-        } else {
+        } 
+        
+        else {
             console.error('User not found or failed to fetch user:', data);
             return null;
         }
     } 
+
     catch (error) {
         console.error('Error occurred while fetching accountId:', error);
         throw error;
@@ -82,12 +85,15 @@ const getFieldOptionId = async (fieldId, optionName) => {
 
         if (!option) {
             console.error(`No matching option found for option name: ${optionName}`);
-        } else {
+        } 
+        
+        else {
             console.log('Selected Option:', JSON.stringify(option, null, 2));
         }
 
         return option ? option.id : null;
     } 
+
     catch (error) {
         console.error('Error occurred while fetching option ID:', error);
         throw error;
@@ -101,6 +107,7 @@ const mapImpactNameToJira = (impactName) => {  // If you need any more custom fi
         'Medium - Impact A few Clients': 'Moderate / Limited',
         'High - Impact Site, Department or VIP': 'Extensive / Widespread'
     };
+
     return mappings[impactName] || null;
 };
 
@@ -112,6 +119,7 @@ const mapUrgencyNameToJira = (urgencyName) => {
         'High - Significant Work Impact': 'High',
         'Urgent - Unable to Work': 'Critical'
     };
+
     return mappings[urgencyName] || null;
 };
 
@@ -124,6 +132,7 @@ const mapPriorityNameToJira = (priorityName) => {
         'High': 'High',
         'Critical': 'Highest'
     };
+
     return mappings[priorityName] || null;
 };
 
@@ -133,6 +142,7 @@ const mapIssueTypeToJira = (issueTypeName) => {
         'Request For Service or Information': '[System] Service request',
         'Incident': '[System] Incident'
     };
+
     return mappings[issueTypeName] || null;
 };
 
@@ -146,7 +156,6 @@ app.post('/create-ticket', async (req, res) => {
         const requesterAccountId = await getAccountIdFromEmail(requester);
         const technicianValue = (technician && technician.trim() !== 'Not Specified') ? technician : 'Unassigned';
         const technicianAccountId = technicianValue === 'Unassigned' ? null : await getAccountIdFromEmail(technicianValue);
-        
 
         const mappedUrgencyName = mapUrgencyNameToJira(urgency);
         const urgencyIdNumber = mappedUrgencyName ? await getFieldOptionId('10064', mappedUrgencyName) : null; // If you add more customfields, you just need to copy what has been done with urgency or impact.
@@ -156,7 +165,6 @@ app.post('/create-ticket', async (req, res) => {
 
         const mappedPriorityName = mapPriorityNameToJira(priority);
         const mappedIssueType = mapIssueTypeToJira(request_type);
-
 
         if (!requesterAccountId) return res.status(404).json({ success: false, message: 'Requester not found' });
 
@@ -178,10 +186,15 @@ app.post('/create-ticket', async (req, res) => {
                         }
                     ]
                 },
+
                 issuetype: { name: mappedIssueType || '[System] Service Request'},  //  By default I have set the request to be classed as a Service Request if no Request Type is stated.
+
                 reporter: { id: requesterAccountId },
+
                 ...(technicianAccountId ? { assignee: { id: technicianAccountId } } : { assignee: { name: 'Unassigned' } }),
+
                 priority: { name: mappedPriorityName },
+
                 customfield_10064: { id: urgencyIdNumber.toString() },
                 customfield_10004: { id: impactIdNumber.toString() },  // When you add more custom fields, copy what is done with these
                 customfield_10111: department,  // If the new custom field just takes the values from the SDP field directly with no need for mapping, then you can copy what is done with these
@@ -207,12 +220,16 @@ app.post('/create-ticket', async (req, res) => {
 
         if (response.ok) {
             res.json({ success: true, message: 'Ticket created successfully!' });
-        } else {
+        } 
+        
+        else {
             console.error('Failed to create ticket:', data);
             res.status(response.status).json({ success: false, message: `${data.errorMessages || JSON.stringify(data.errors)}` });
         }
     
-    } catch (error) {
+    } 
+    
+    catch (error) {
         console.error('Error occurred:', error);
         res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
     }

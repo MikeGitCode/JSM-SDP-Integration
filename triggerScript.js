@@ -1,11 +1,14 @@
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
-const triggerUrl = 'http://localhost:3000/create-ticket';
+dotenv.config();
+const { PORT } = process.env;
 
-// Simulate form data (replace with actual data if available)
+const triggerUrl = `http://localhost:${PORT}/create-ticket`;
+
 const ticketData = {
-    requester: 'John Smith',
-    technician: 'Susie Marsh',
+    requester: '',
+    technician: 'Unassigned',
     urgency: 'Low - Minor Inconvenience',
     impact: 'Low - Impact One Client',
     priority: 'High',
@@ -22,7 +25,7 @@ const ticketData = {
     resolved_time: '<#resolved_time>',
     requester_ack_comments: '<#requester_ack_comments>',
     requester_ack_resolution: '<#requester_ack_resolution>',
-    created_by: 'Benjamin Totes',
+    created_by: 'System',
     template: '<#template>',
     approval_status: '<#approval_status>',
     service_category: '<#service_category>',
@@ -55,6 +58,7 @@ const sendRequest = async (data) => {
             console.error('Failed to create ticket:', result);
         }
     } 
+
     catch (error) {
         console.error('Error occurred:', error);
     }
